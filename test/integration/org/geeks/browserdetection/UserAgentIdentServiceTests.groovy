@@ -165,15 +165,10 @@ class UserAgentIdentServiceTests extends GroovyTestCase {
 		assert !service.isMobile()
 	}
     
-    void testBreaksWithNPE() {
+    void testVersionCompareWhenNoVersion() {
         RCH.currentRequestAttributes().currentRequest.addHeader("user-agent",
             "Mozilla/4.0 (compatible; MSIE; Windows NT 5.1; GTB6.4; .NET CLR 1.1.4322; FDM; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)")
-
-        // version string would normally contain things like "MSIE #.#;" ... but when version number is missing, NPE results
-        try {
-            service.isMsie(ComparisonType.EQUAL, "7.*") // <-- should fail with NPE ... cannot test since I cannot get the project to run ... some config and/or dependency issue(s)
-            fail("invocation did not fail as expected")
-        } catch (NullPointerException e) { /* ignored */ }
+        assert !service.isMsie(ComparisonType.EQUAL, "7.*") // <-- false result as version check is being done, but no version in user-agent header
     }
     
 }

@@ -14,7 +14,7 @@ class UserAgentIdentService extends WebTierService {
     final static String SAFARI = "safari"
     final static String OTHER = "other"
     final static String MSIE = "msie"
-    final static String UNKNOWN = "unknown"
+//    final static String UNKNOWN = "unknown"
     final static String BLACKBERRY = "blackberry"
     final static String SEAMONKEY = "seamonkey"
     final static String OPERA = "opera"
@@ -51,7 +51,7 @@ class UserAgentIdentService extends WebTierService {
 		request.getHeader("user-agent")
 	}
 
-	private def getUserAgent() {
+	private UserAgent getUserAgent() {
 
 		def userAgentString = getUserAgentString()
 		def userAgent = request.session.getAttribute(AGENT_INFO_TOKEN)
@@ -83,7 +83,7 @@ class UserAgentIdentService extends WebTierService {
 		return userAgent
 	}
 
-	private def parseUserAgent(String userAgentString){
+	private static UserAgent parseUserAgent(String userAgentString){
 		UserAgent.parseUserAgentString(userAgentString)
 	}
 
@@ -122,33 +122,33 @@ class UserAgentIdentService extends WebTierService {
 
 		// browser checking
 		if(!(browser.group == browserForChecking || browser == browserForChecking)){
-			return false
+			return false // browser did not match
 		}
 
-		// version checking
-		if(version){
-			if(!comparisonType){
-				throw new IllegalArgumentException("comparisonType should be specified")
-			}
+        // version checking
+        if(!version){
+            return true // not checking version
+        }
 
-			if(comparisonType == ComparisonType.EQUAL){
-				return VersionHelper.equals(userAgent.browserVersion.version, version)
-			}
+        // userAgent.browserVersion can be null, need to handle accordingly
+        def userAgentBrowserVersion = userAgent.browserVersion?.version
+        if(!userAgentBrowserVersion) {
+            return false; // checking version, but no version in user-agent header to compare against
+        }
 
-			def compRes = VersionHelper.compare(userAgent.browserVersion.version, version)
+        if(!comparisonType){
+            throw new IllegalArgumentException("comparisonType should be specified")
+        }
 
-			if(compRes == 1 && comparisonType == ComparisonType.GREATER){
-				return true
-			}
+        switch (comparisonType) {
+            case ComparisonType.EQUAL:
+                return VersionHelper.equals(userAgentBrowserVersion, version)
+            case ComparisonType.GREATER:
+                return VersionHelper.compare(userAgentBrowserVersion, version) == 1
+            case ComparisonType.LOWER:
+                return VersionHelper.compare(userAgentBrowserVersion, version) == -1
+        }
 
-			if(compRes == -1 && comparisonType == ComparisonType.LOWER){
-				return true
-			}
-
-			return false
-		}
-
-		true
 	}
 
 	private boolean isOs(OperatingSystem osForChecking){
